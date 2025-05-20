@@ -118,6 +118,7 @@ struct ContentView: View {
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     Task {
                         do {
+                            conversation_items = []
                             let config = OutspeedSDK.SessionConfig(agentId: "1234567890")
                             var callbacks = OutspeedSDK.Callbacks()
                             callbacks.onConnect = { conversationId in
@@ -125,7 +126,8 @@ struct ContentView: View {
                                 print("Connected with ID: \(conversationId)")
                             }
                             callbacks.onMessage = { message, role in
-                                let newItem = OutspeedSDK.ConversationItem(id: "", role: String(describing: role), text: message)
+                                print("Role: \(String(describing: role)) Message: \(message)")
+                                let newItem = OutspeedSDK.ConversationItem(id: UUID().uuidString, role: String(describing: role), text: message)
                                 conversation_items.append(newItem)
                             }
                             callbacks.onError = { error, info in
@@ -202,7 +204,7 @@ struct ContentView: View {
                 UIPasteboard.general.string = msg.text
             }
         }
-        .padding(.bottom, msg.role == "assistant" ? 24 : 8)
+        .padding(.bottom, msg.role == "assistant" || msg.role == "ai" ? 24 : 8)
     }
     
     // MARK: - Message Input
