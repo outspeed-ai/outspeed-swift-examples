@@ -1,6 +1,6 @@
 import SwiftUI
 import AVFoundation
-import OutspeedSwift
+import OutspeedSDK
 
 let OPENAI_API_KEY = ""
 let OUTSPEED_API_KEY = ""

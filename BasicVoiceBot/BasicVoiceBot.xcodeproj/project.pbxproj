@@ -7,9 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D3D016AC2DDC276400A4BB3A /* OutspeedSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D3D016AB2DDC276400A4BB3A /* OutspeedSwift */; };
-		D3D016AF2DDC27FB00A4BB3A /* OutspeedSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D3D016AE2DDC27FB00A4BB3A /* OutspeedSwift */; };
-		D3D016B22DDC284E00A4BB3A /* OutspeedSwift in Frameworks */ = {isa = PBXBuildFile; productRef = D3D016B12DDC284E00A4BB3A /* OutspeedSwift */; };
+		D327F67D2DDD4578008F3DCD /* OutspeedSDK in Frameworks */ = {isa = PBXBuildFile; productRef = D327F67C2DDD4578008F3DCD /* OutspeedSDK */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,9 +46,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D3D016AC2DDC276400A4BB3A /* OutspeedSwift in Frameworks */,
-				D3D016B22DDC284E00A4BB3A /* OutspeedSwift in Frameworks */,
-				D3D016AF2DDC27FB00A4BB3A /* OutspeedSwift in Frameworks */,
+				D327F67D2DDD4578008F3DCD /* OutspeedSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,9 +105,7 @@
 			);
 			name = BasicVoiceBot;
 			packageProductDependencies = (
-				D3D016AB2DDC276400A4BB3A /* OutspeedSwift */,
-				D3D016AE2DDC27FB00A4BB3A /* OutspeedSwift */,
-				D3D016B12DDC284E00A4BB3A /* OutspeedSwift */,
+				D327F67C2DDD4578008F3DCD /* OutspeedSDK */,
 			);
 			productName = BasicVoiceBot;
 			productReference = D3D016802DDC272A00A4BB3A /* BasicVoiceBot.app */;
@@ -190,7 +184,7 @@
 			mainGroup = D3D016772DDC272A00A4BB3A;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				D3D016B02DDC284E00A4BB3A /* XCLocalSwiftPackageReference "../../OutspeedSwift" */,
+				D327F67B2DDD4578008F3DCD /* XCRemoteSwiftPackageReference "OutspeedSwift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D3D016812DDC272A00A4BB3A /* Products */;
@@ -550,25 +544,22 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		D3D016B02DDC284E00A4BB3A /* XCLocalSwiftPackageReference "../../OutspeedSwift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../OutspeedSwift;
+/* Begin XCRemoteSwiftPackageReference section */
+		D327F67B2DDD4578008F3DCD /* XCRemoteSwiftPackageReference "OutspeedSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/outspeed-ai/OutspeedSwift";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D3D016AB2DDC276400A4BB3A /* OutspeedSwift */ = {
+		D327F67C2DDD4578008F3DCD /* OutspeedSDK */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = OutspeedSwift;
-		};
-		D3D016AE2DDC27FB00A4BB3A /* OutspeedSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = OutspeedSwift;
-		};
-		D3D016B12DDC284E00A4BB3A /* OutspeedSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = OutspeedSwift;
+			package = D327F67B2DDD4578008F3DCD /* XCRemoteSwiftPackageReference "OutspeedSwift" */;
+			productName = OutspeedSDK;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
