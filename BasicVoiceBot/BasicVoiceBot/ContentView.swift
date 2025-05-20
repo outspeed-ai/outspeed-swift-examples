@@ -13,6 +13,7 @@ struct ContentView: View {
     @FocusState private var isTextFieldFocused: Bool
     @State private var conversationItems: [LocalConversationItem] = [] // Local conversation items
     @State private var outgoingMessage: String = "" // Local outgoing message
+    @State private var conversation_items: [OutspeedSDK.ConversationItem] = []
     
     // AppStorage properties
     @AppStorage("openaiApiKey") private var openaiApiKey = OPENAI_API_KEY
@@ -124,7 +125,8 @@ struct ContentView: View {
                                 print("Connected with ID: \(conversationId)")
                             }
                             callbacks.onMessage = { message, role in
-                                print("\(role.rawValue): \(message)")
+                                let newItem = OutspeedSDK.ConversationItem(id: "", role: String(describing: role), text: message)
+                                conversation_items.append(newItem)
                             }
                             callbacks.onError = { error, info in
                                 print("Error: \(error), Info: \(String(describing: info))")
@@ -174,10 +176,8 @@ struct ContentView: View {
             .padding(.horizontal)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    if let manager = webrtcManager {
-                        ForEach(manager.conversation) { msg in
-                            MessageRow(msg: LocalConversationItem(from: msg))
-                        }
+                    ForEach(conversation_items) { msg in
+                        MessageRow(msg: LocalConversationItem(from: msg))
                     }
                 }
                 .padding()
@@ -250,7 +250,7 @@ struct LocalConversationItem: Identifiable {
     }
     
     // Converter from OutspeedSwift.ConversationItem
-    init(from item: OutspeedSwift.ConversationItem) {
+    init(from item: OutspeedSDK.ConversationItem) {
         self.id = item.id
         self.role = item.role
         self.text = item.text
