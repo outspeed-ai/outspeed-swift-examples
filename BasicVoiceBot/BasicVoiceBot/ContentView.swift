@@ -6,8 +6,8 @@ let OPENAI_API_KEY = ""
 let OUTSPEED_API_KEY = ""
 
 struct ContentView: View {
-    @StateObject private var webrtcManager = OutspeedSDK()
-    
+    @State private var conversation: OutspeedSDK.Conversation?
+    @State private var webrtcManager: WebRTCManager?
     @State private var showOptionsSheet = false
     @FocusState private var isTextFieldFocused: Bool
     
@@ -85,13 +85,10 @@ struct ContentView: View {
             // Connection status indicator
             Circle()
                 .frame(width: 12, height: 12)
-                .foregroundColor(webrtcManager.connectionStatus.color)
-            Text(webrtcManager.connectionStatus.description)
-                .foregroundColor(webrtcManager.connectionStatus.color)
                 .contentTransition(.numericText())
-                .animation(.easeInOut(duration: 0.3), value: webrtcManager.connectionStatus)
-                .onChange(of: webrtcManager.connectionStatus) { _ in
-                    switch webrtcManager.connectionStatus {
+                .animation(.easeInOut(duration: 0.3), value: webrtcManager?.connectionStatus)
+                .onChange(of: webrtcManager?.connectionStatus) { _ in
+                    switch webrtcManager?.connectionStatus {
                     case .connecting:
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     case .connected:
@@ -104,26 +101,44 @@ struct ContentView: View {
             Spacer()
             
             // Connection Button
-            if webrtcManager.connectionStatus == .connected {
+            if webrtcManager?.connectionStatus == .connected {
                 Button("Stop Connection") {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    webrtcManager.stopConnection()
+                    conversation?.endSession()
                 }
                 .buttonStyle(.borderedProminent)
             } else {
                 Button("Start Connection") {
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    webrtcManager.connectionStatus = .connecting
-                    webrtcManager.startConnection(
-                        apiKey: currentApiKey,
-                        modelName: selectedModel,
-                        systemMessage: systemMessage,
-                        voice: selectedVoice,
-                        provider: currentProvider
-                    )
+                    var callbacks = Callbacks()
+                    callbacks.onConnect = { conversationId in
+                        print("Connected with ID: \(conversationId)")
+                    }
+                    callbacks.onMessage = { message, role in
+                        print("\(role.rawValue): \(message)")
+                    }
+                    callbacks.onError = { error, info in
+                        print("Error: \(error), Info: \(String(describing: info))")
+                    }
+                    callbacks.onStatusChange = { status in
+                        print("Status changed to: \(status.rawValue)")
+                    }
+                    callbacks.onModeChange = { mode in
+                        print("Mode changed to: \(mode.rawValue)")
+                    }
+
+                    Task {
+                        do {
+                            conversation = try await OutspeedSDK.Conversation.startSession(callbacks: callbacks, apiKey: outspeedApiKey)
+                            webrtcManager = conversation?.connection
+                            // Use the conversation instance as needed
+                        } catch {
+                            print("Failed to start conversation: \(error)")
+                        }
+                    }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(webrtcManager.connectionStatus == .connecting)
+                .disabled(webrtcManager?.connectionStatus == .connecting)
                 Button {
                     showOptionsSheet.toggle()
                 } label: {
@@ -143,7 +158,7 @@ struct ContentView: View {
                 Text("Conversation")
                     .font(.headline)
                 Spacer()
-                Text(webrtcManager.eventTypeStr)
+                Text(webrtcManager?.eventTypeStr ?? "")
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
@@ -152,7 +167,7 @@ struct ContentView: View {
             .padding(.horizontal)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(webrtcManager.conversation) { msg in
+                    ForEach(webrtcManager?.conversation ?? []) { msg in
                         MessageRow(msg: msg)
                     }
                 }
@@ -185,14 +200,14 @@ struct ContentView: View {
     @ViewBuilder
     private func MessageInputView() -> some View {
         HStack {
-            TextField("Insert message...", text: $webrtcManager.outgoingMessage, axis: .vertical)
+            TextField("Insert message...", text: $webrtcManager?.outgoingMessage, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .focused($isTextFieldFocused)
             Button("Send") {
                 webrtcManager.sendMessage()
                 isTextFieldFocused = false
             }
-            .disabled(webrtcManager.connectionStatus != .connected)
+            .disabled(webrtcManager?.connectionStatus != .connected)
             .buttonStyle(.bordered)
         }
         .padding([.horizontal, .bottom])
