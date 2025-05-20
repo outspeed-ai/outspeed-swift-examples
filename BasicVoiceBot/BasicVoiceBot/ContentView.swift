@@ -133,7 +133,8 @@ struct ContentView: View {
 
                     Task {
                         do {
-                            conversation = try await OutspeedSDK.Conversation.startSession(callbacks: callbacks, apiKey: currentApiKey, provider: currentProvider)
+                            let config = OutspeedSDK.SessionConfig(agentId: "1234567890")
+                            conversation = try await OutspeedSDK.Conversation.startSession(config: config, callbacks: callbacks, apiKey: currentApiKey, provider: currentProvider)
                             webrtcManager = conversation?.connection
                             // Use the conversation instance as needed
                         } catch {
