@@ -10,6 +10,8 @@ struct ContentView: View {
     @State private var webrtcManager: WebRTCManager?
     @State private var showOptionsSheet = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var conversationItems: [LocalConversationItem] = [] // Local conversation items
+    @State private var outgoingMessage: String = "" // Local outgoing message
     
     // AppStorage properties
     @AppStorage("openaiApiKey") private var openaiApiKey = OPENAI_API_KEY
@@ -94,7 +96,9 @@ struct ContentView: View {
                     case .connected:
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     case .disconnected:
-                        webrtcManager.eventTypeStr = ""
+                        webrtcManager?.eventTypeStr = ""
+                    default:
+                        break
                     }
                 }
             
@@ -167,8 +171,10 @@ struct ContentView: View {
             .padding(.horizontal)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(webrtcManager?.conversation ?? []) { msg in
-                        MessageRow(msg: msg)
+                    if let manager = webrtcManager {
+                        ForEach(manager.conversation) { msg in
+                            MessageRow(msg: LocalConversationItem(from: msg))
+                        }
                     }
                 }
                 .padding()
@@ -178,7 +184,7 @@ struct ContentView: View {
     
     // MARK: - Message Row
     @ViewBuilder
-    private func MessageRow(msg: ConversationItem) -> some View {
+    private func MessageRow(msg: LocalConversationItem) -> some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: msg.roleSymbol)
                 .foregroundColor(msg.roleColor)
@@ -200,17 +206,51 @@ struct ContentView: View {
     @ViewBuilder
     private func MessageInputView() -> some View {
         HStack {
-            TextField("Insert message...", text: $webrtcManager?.outgoingMessage, axis: .vertical)
+            TextField("Insert message...", text: $outgoingMessage, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .focused($isTextFieldFocused)
+                .onChange(of: outgoingMessage) { newValue in
+                    if let manager = webrtcManager {
+                        manager.outgoingMessage = newValue
+                    }
+                }
             Button("Send") {
-                webrtcManager.sendMessage()
+                webrtcManager?.sendMessage()
                 isTextFieldFocused = false
+                outgoingMessage = ""
             }
             .disabled(webrtcManager?.connectionStatus != .connected)
             .buttonStyle(.bordered)
         }
         .padding([.horizontal, .bottom])
+    }
+}
+
+// MARK: - Local ConversationItem to resolve type conflict
+struct LocalConversationItem: Identifiable {
+    let id: String
+    let role: String
+    var text: String
+    
+    var roleSymbol: String {
+        role.lowercased() == "user" ? "person.fill" : "sparkles"
+    }
+    
+    var roleColor: Color {
+        role.lowercased() == "user" ? .blue : .purple
+    }
+    
+    init(id: String, role: String, text: String) {
+        self.id = id
+        self.role = role
+        self.text = text
+    }
+    
+    // Converter from OutspeedSwift.ConversationItem
+    init(from item: OutspeedSwift.ConversationItem) {
+        self.id = item.id
+        self.role = item.role
+        self.text = item.text
     }
 }
 
@@ -287,20 +327,6 @@ struct OptionsView: View {
 }
 
 // MARK: - Models and Enums
-
-struct ConversationItem: Identifiable {
-    let id: String       // item_id from the JSON
-    let role: String     // "user" / "assistant"
-    var text: String     // transcript
-    
-    var roleSymbol: String {
-        role.lowercased() == "user" ? "person.fill" : "sparkles"
-    }
-    
-    var roleColor: Color {
-        role.lowercased() == "user" ? .blue : .purple
-    }
-}
 
 enum ConnectionStatus: String {
     case connected
