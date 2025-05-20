@@ -7,6 +7,7 @@ let OUTSPEED_API_KEY = ""
 
 struct ContentView: View {
     @State private var conversation: OutspeedSDK.Conversation?
+    @State private var connectionStatus: OutspeedSDK.Status = .disconnected
     @State private var webrtcManager: WebRTCManager?
     @State private var showOptionsSheet = false
     @FocusState private var isTextFieldFocused: Bool
@@ -88,9 +89,9 @@ struct ContentView: View {
             Circle()
                 .frame(width: 12, height: 12)
                 .contentTransition(.numericText())
-                .animation(.easeInOut(duration: 0.3), value: webrtcManager?.connectionStatus)
-                .onChange(of: webrtcManager?.connectionStatus) { _ in
-                    switch webrtcManager?.connectionStatus {
+                .animation(.easeInOut(duration: 0.3), value: connectionStatus)
+                .onChange(of: connectionStatus) { _ in
+                    switch connectionStatus {
                     case .connecting:
                         UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     case .connected:
@@ -105,7 +106,7 @@ struct ContentView: View {
             Spacer()
             
             // Connection Button
-            if webrtcManager?.connectionStatus == .connected {
+            if connectionStatus == .connected {
                 Button("Stop Connection") {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     conversation?.endSession()
@@ -114,26 +115,27 @@ struct ContentView: View {
             } else {
                 Button("Start Connection") {
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    var callbacks = Callbacks()
-                    callbacks.onConnect = { conversationId in
-                        print("Connected with ID: \(conversationId)")
-                    }
-                    callbacks.onMessage = { message, role in
-                        print("\(role.rawValue): \(message)")
-                    }
-                    callbacks.onError = { error, info in
-                        print("Error: \(error), Info: \(String(describing: info))")
-                    }
-                    callbacks.onStatusChange = { status in
-                        print("Status changed to: \(status.rawValue)")
-                    }
-                    callbacks.onModeChange = { mode in
-                        print("Mode changed to: \(mode.rawValue)")
-                    }
-
                     Task {
                         do {
                             let config = OutspeedSDK.SessionConfig(agentId: "1234567890")
+                            var callbacks = OutspeedSDK.Callbacks()
+                            callbacks.onConnect = { conversationId in
+                                connectionStatus = .connected
+                                print("Connected with ID: \(conversationId)")
+                            }
+                            callbacks.onMessage = { message, role in
+                                print("\(role.rawValue): \(message)")
+                            }
+                            callbacks.onError = { error, info in
+                                print("Error: \(error), Info: \(String(describing: info))")
+                            }
+                            callbacks.onStatusChange = { status in
+                                print("Status changed to: \(status.rawValue)")
+                                connectionStatus = status
+                            }
+                            callbacks.onDisconnect = {
+                                connectionStatus = .disconnected
+                            }
                             conversation = try await OutspeedSDK.Conversation.startSession(config: config, callbacks: callbacks, apiKey: currentApiKey, provider: currentProvider)
                             webrtcManager = conversation?.connection
                             // Use the conversation instance as needed
@@ -143,7 +145,7 @@ struct ContentView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(webrtcManager?.connectionStatus == .connecting)
+                .disabled(connectionStatus == .connecting)
                 Button {
                     showOptionsSheet.toggle()
                 } label: {
@@ -220,7 +222,7 @@ struct ContentView: View {
                 isTextFieldFocused = false
                 outgoingMessage = ""
             }
-            .disabled(webrtcManager?.connectionStatus != .connected)
+            .disabled(connectionStatus != .connected)
             .buttonStyle(.bordered)
         }
         .padding([.horizontal, .bottom])
@@ -323,36 +325,6 @@ struct OptionsView: View {
                     }
                 }
             }
-        }
-    }
-}
-
-// MARK: - Models and Enums
-
-enum ConnectionStatus: String {
-    case connected
-    case connecting
-    case disconnected
-    
-    var color: Color {
-        switch self {
-        case .connected:
-            return .green
-        case .connecting:
-            return .yellow
-        case .disconnected:
-            return .red
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .connected:
-            return "Connected"
-        case .connecting:
-            return "Connecting"
-        case .disconnected:
-            return "Not Connected"
         }
     }
 }
