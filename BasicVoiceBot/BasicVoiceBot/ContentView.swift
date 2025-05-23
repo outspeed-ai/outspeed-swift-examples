@@ -119,7 +119,8 @@ struct ContentView: View {
                     Task {
                         do {
                             conversation_items = []
-                            let config = OutspeedSDK.SessionConfig(agentId: "1234567890")
+                            let agentConfig = OutspeedSDK.AgentConfig(prompt: OutspeedSDK.AgentPrompt(prompt: systemMessage))
+                            let config = OutspeedSDK.SessionConfig(agentId: "", overrides: OutspeedSDK.ConversationConfigOverride(agent: agentConfig))
                             var callbacks = OutspeedSDK.Callbacks()
                             callbacks.onConnect = { conversationId in
                                 connectionStatus = .connected
