@@ -1,6 +1,6 @@
-import SwiftUI
 import AVFoundation
 import OutspeedSDK
+import SwiftUI
 
 let OPENAI_API_KEY = ""
 let OUTSPEED_API_KEY = ""
@@ -11,10 +11,10 @@ struct ContentView: View {
     @State private var webrtcManager: WebRTCManager?
     @State private var showOptionsSheet = false
     @FocusState private var isTextFieldFocused: Bool
-    @State private var conversationItems: [LocalConversationItem] = [] // Local conversation items
-    @State private var outgoingMessage: String = "" // Local outgoing message
+    @State private var conversationItems: [LocalConversationItem] = []  // Local conversation items
+    @State private var outgoingMessage: String = ""  // Local outgoing message
     @State private var conversation_items: [OutspeedSDK.ConversationItem] = []
-    
+
     // AppStorage properties
     @AppStorage("openaiApiKey") private var openaiApiKey = OPENAI_API_KEY
     @AppStorage("outspeedApiKey") private var outspeedApiKey = OUTSPEED_API_KEY
@@ -22,12 +22,12 @@ struct ContentView: View {
     @AppStorage("selectedModel") private var selectedModel = Provider.outspeed.defaultModel
     @AppStorage("selectedVoice") private var selectedVoice = Provider.outspeed.defaultVoice
     @AppStorage("selectedProvider") private var selectedProvider = Provider.outspeed.rawValue
-    
+
     // Computed properties
     private var currentProvider: Provider {
         Provider(rawValue: selectedProvider) ?? .openai
     }
-    
+
     private var currentApiKey: String {
         switch currentProvider {
         case .openai:
@@ -36,23 +36,23 @@ struct ContentView: View {
             return outspeedApiKey
         }
     }
-    
+
     private var modelOptions: [String] {
         currentProvider.modelOptions
     }
-    
+
     private var voiceOptions: [String] {
         currentProvider.voiceOptions
     }
-    
+
     var body: some View {
         VStack(spacing: 12) {
             HeaderView()
             ConnectionControls()
             Divider().padding(.vertical, 6)
-            
+
             ConversationView()
-            
+
             MessageInputView()
         }
         .sheet(isPresented: $showOptionsSheet) {
@@ -68,7 +68,7 @@ struct ContentView: View {
             )
         }
     }
-        
+
     @ViewBuilder
     private func HeaderView() -> some View {
         VStack(spacing: 2) {
@@ -82,7 +82,7 @@ struct ContentView: View {
                 .padding(.bottom, 10)
         }
     }
-    
+
     @ViewBuilder
     private func ConnectionControls() -> some View {
         HStack {
@@ -103,9 +103,9 @@ struct ContentView: View {
                         break
                     }
                 }
-            
+
             Spacer()
-            
+
             // Connection Button
             if connectionStatus == .connected {
                 Button("Stop Connection") {
@@ -119,7 +119,8 @@ struct ContentView: View {
                     Task {
                         do {
                             conversation_items = []
-                            let config = OutspeedSDK.SessionConfig(agentId: "1234567890")
+                            let agentConfig = OutspeedSDK.AgentConfig(prompt: OutspeedSDK.AgentPrompt(prompt: systemMessage))
+                            let config = OutspeedSDK.SessionConfig(agentId: "", overrides: OutspeedSDK.ConversationConfigOverride(agent: agentConfig))
                             var callbacks = OutspeedSDK.Callbacks()
                             callbacks.onConnect = { conversationId in
                                 connectionStatus = .connected
@@ -127,7 +128,9 @@ struct ContentView: View {
                             }
                             callbacks.onMessage = { message, role in
                                 print("Role: \(String(describing: role)) Message: \(message)")
-                                let newItem = OutspeedSDK.ConversationItem(id: UUID().uuidString, role: String(describing: role), text: message)
+                                let newItem = OutspeedSDK.ConversationItem(
+                                    id: UUID().uuidString, role: String(describing: role),
+                                    text: message)
                                 conversation_items.append(newItem)
                             }
                             callbacks.onError = { error, info in
@@ -140,7 +143,11 @@ struct ContentView: View {
                             callbacks.onDisconnect = {
                                 connectionStatus = .disconnected
                             }
-                            conversation = try await OutspeedSDK.Conversation.startSession(config: config, callbacks: callbacks, apiKey: currentApiKey, provider: currentProvider)
+                            conversation = try await OutspeedSDK.Conversation.startSession(
+                                config: config,
+                                callbacks: callbacks, apiKey: currentApiKey,
+                                provider: currentProvider,
+                            )
                             webrtcManager = conversation?.connection
                             // Use the conversation instance as needed
                         } catch {
@@ -160,7 +167,7 @@ struct ContentView: View {
         }
         .padding(.horizontal)
     }
-    
+
     // MARK: - Conversation View
     @ViewBuilder
     private func ConversationView() -> some View {
@@ -186,7 +193,7 @@ struct ContentView: View {
             }
         }
     }
-    
+
     // MARK: - Message Row
     @ViewBuilder
     private func MessageRow(msg: LocalConversationItem) -> some View {
@@ -206,7 +213,7 @@ struct ContentView: View {
         }
         .padding(.bottom, msg.role == "assistant" || msg.role == "ai" ? 24 : 8)
     }
-    
+
     // MARK: - Message Input
     @ViewBuilder
     private func MessageInputView() -> some View {
@@ -236,21 +243,21 @@ struct LocalConversationItem: Identifiable {
     let id: String
     let role: String
     var text: String
-    
+
     var roleSymbol: String {
         role.lowercased() == "user" ? "person.fill" : "sparkles"
     }
-    
+
     var roleColor: Color {
         role.lowercased() == "user" ? .blue : .purple
     }
-    
+
     init(id: String, role: String, text: String) {
         self.id = id
         self.role = role
         self.text = text
     }
-    
+
     // Converter from OutspeedSwift.ConversationItem
     init(from item: OutspeedSDK.ConversationItem) {
         self.id = item.id
@@ -266,12 +273,12 @@ struct OptionsView: View {
     @Binding var selectedModel: String
     @Binding var selectedVoice: String
     @Binding var selectedProvider: String
-    
+
     let modelOptions: [String]
     let voiceOptions: [String]
-    
+
     @Environment(\.presentationMode) var presentationMode
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -287,20 +294,20 @@ struct OptionsView: View {
                         selectedVoice = newProvider.defaultVoice
                     }
                 }
-                
+
                 Section(header: Text("API Keys")) {
                     TextField("OpenAI API Key", text: $openaiApiKey)
                         .autocapitalization(.none)
                     TextField("Outspeed API Key", text: $outspeedApiKey)
                         .autocapitalization(.none)
                 }
-                
+
                 Section(header: Text("System Message")) {
                     TextEditor(text: $systemMessage)
                         .frame(minHeight: 100)
                         .cornerRadius(5)
                 }
-                
+
                 Section(header: Text("Model")) {
                     Picker("Model", selection: $selectedModel) {
                         ForEach(modelOptions, id: \.self) {
@@ -309,7 +316,7 @@ struct OptionsView: View {
                     }
                     .pickerStyle(.menu)
                 }
-                
+
                 Section(header: Text("Voice")) {
                     Picker("Voice", selection: $selectedVoice) {
                         ForEach(voiceOptions, id: \.self) {
