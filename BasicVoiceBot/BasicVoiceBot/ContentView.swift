@@ -83,6 +83,54 @@ struct ContentView: View {
         }
     }
 
+    private func initConversationAsync() {
+        Task {
+            do {
+                conversation_items = []
+                let agentConfig = OutspeedSDK.AgentConfig(
+                    prompt: OutspeedSDK.AgentPrompt(prompt: systemMessage),
+                    firstMessage: "Hey there, how can i help you with Outspeed today?"
+                )
+                let config = OutspeedSDK.SessionConfig(
+                    agentId: "",
+                    overrides: OutspeedSDK.ConversationConfigOverride(
+                        agent: agentConfig),
+                )
+                var callbacks = OutspeedSDK.Callbacks()
+                callbacks.onConnect = { conversationId in
+                    connectionStatus = .connected
+                    print("Connected with ID: \(conversationId)")
+                }
+                callbacks.onMessage = { message, role in
+                    print("Role: \(String(describing: role)) Message: \(message)")
+                    let newItem = OutspeedSDK.ConversationItem(
+                        id: UUID().uuidString, role: String(describing: role),
+                        text: message)
+                    conversation_items.append(newItem)
+                }
+                callbacks.onError = { error, info in
+                    print("Error: \(error), Info: \(String(describing: info))")
+                }
+                callbacks.onStatusChange = { status in
+                    print("Status changed to: \(status.rawValue)")
+                    connectionStatus = status
+                }
+                callbacks.onDisconnect = {
+                    connectionStatus = .disconnected
+                }
+                conversation = try await OutspeedSDK.Conversation.startSession(
+                    config: config,
+                    callbacks: callbacks, apiKey: currentApiKey,
+                    provider: currentProvider,
+                )
+                webrtcManager = conversation?.connection
+                // Use the conversation instance as needed
+            } catch {
+                print("Failed to start conversation: \(error)")
+            }
+        }
+    }
+
     @ViewBuilder
     private func ConnectionControls() -> some View {
         HStack {
@@ -116,44 +164,7 @@ struct ContentView: View {
             } else {
                 Button("Start Connection") {
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                    Task {
-                        do {
-                            conversation_items = []
-                            let agentConfig = OutspeedSDK.AgentConfig(prompt: OutspeedSDK.AgentPrompt(prompt: systemMessage))
-                            let config = OutspeedSDK.SessionConfig(agentId: "", overrides: OutspeedSDK.ConversationConfigOverride(agent: agentConfig))
-                            var callbacks = OutspeedSDK.Callbacks()
-                            callbacks.onConnect = { conversationId in
-                                connectionStatus = .connected
-                                print("Connected with ID: \(conversationId)")
-                            }
-                            callbacks.onMessage = { message, role in
-                                print("Role: \(String(describing: role)) Message: \(message)")
-                                let newItem = OutspeedSDK.ConversationItem(
-                                    id: UUID().uuidString, role: String(describing: role),
-                                    text: message)
-                                conversation_items.append(newItem)
-                            }
-                            callbacks.onError = { error, info in
-                                print("Error: \(error), Info: \(String(describing: info))")
-                            }
-                            callbacks.onStatusChange = { status in
-                                print("Status changed to: \(status.rawValue)")
-                                connectionStatus = status
-                            }
-                            callbacks.onDisconnect = {
-                                connectionStatus = .disconnected
-                            }
-                            conversation = try await OutspeedSDK.Conversation.startSession(
-                                config: config,
-                                callbacks: callbacks, apiKey: currentApiKey,
-                                provider: currentProvider,
-                            )
-                            webrtcManager = conversation?.connection
-                            // Use the conversation instance as needed
-                        } catch {
-                            print("Failed to start conversation: \(error)")
-                        }
-                    }
+                    initConversationAsync()
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(connectionStatus == .connecting)
