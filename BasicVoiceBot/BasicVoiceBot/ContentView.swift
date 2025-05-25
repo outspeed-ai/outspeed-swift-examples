@@ -87,14 +87,23 @@ struct ContentView: View {
         Task {
             do {
                 conversation_items = []
+
+                // Configure system message & first message (ElevenLabs compatible)
                 let agentConfig = OutspeedSDK.AgentConfig(
                     prompt: OutspeedSDK.AgentPrompt(prompt: systemMessage),
                     firstMessage: "Hey there, how can i help you with Outspeed today?"
                 )
+
+                // Configure voice selection (ElevenLabs compatible)
+                let ttsConfig = OutspeedSDK.TTSConfig(voiceId: selectedVoice)
+                // example usage of OrpheusVoice enum
+                // let ttsConfig = OutspeedSDK.TTSConfig(voiceId: OutspeedSDK.OrpheusVoice.zac.rawValue)
+
                 let config = OutspeedSDK.SessionConfig(
-                    agentId: "",
                     overrides: OutspeedSDK.ConversationConfigOverride(
-                        agent: agentConfig),
+                        agent: agentConfig,
+                        tts: ttsConfig
+                    )
                 )
                 var callbacks = OutspeedSDK.Callbacks()
                 callbacks.onConnect = { conversationId in
