@@ -96,8 +96,8 @@ struct ContentView: View {
 
                 // Configure voice selection (ElevenLabs compatible)
                 let ttsConfig = OutspeedSDK.TTSConfig(voiceId: selectedVoice)
-                // example usage of OrpheusVoice enum
-                // let ttsConfig = OutspeedSDK.TTSConfig(voiceId: OutspeedSDK.OrpheusVoice.zac.rawValue)
+                // example usage of Voice enum
+                // let ttsConfig = OutspeedSDK.TTSConfig(voiceId: OutspeedSDK.Voice.david.rawValue)
 
                 let config = OutspeedSDK.SessionConfig(
                     overrides: OutspeedSDK.ConversationConfigOverride(
