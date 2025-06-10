@@ -146,7 +146,7 @@ struct ContentView: View {
             // Connection status indicator
             Circle()
                 .frame(width: 12, height: 12)
-                .contentTransition(.numericText())
+                // .contentTransition(.numericText())  // needs iOS 16+
                 .animation(.easeInOut(duration: 0.3), value: connectionStatus)
                 .onChange(of: connectionStatus) { _ in
                     switch connectionStatus {
@@ -223,7 +223,7 @@ struct ContentView: View {
                 .padding(.top, 4)
             Text(msg.text.trimmingCharacters(in: .whitespacesAndNewlines))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .contentTransition(.numericText())
+                // .contentTransition(.numericText())  // needs iOS 16+
                 .animation(.easeInOut(duration: 0.1), value: msg.text)
         }
         .contextMenu {
@@ -238,7 +238,7 @@ struct ContentView: View {
     @ViewBuilder
     private func MessageInputView() -> some View {
         HStack {
-            TextField("Insert message...", text: $outgoingMessage, axis: .vertical)
+            TextField("Insert message...", text: $outgoingMessage)
                 .textFieldStyle(.roundedBorder)
                 .focused($isTextFieldFocused)
                 .onChange(of: outgoingMessage) { newValue in
